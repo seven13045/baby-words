@@ -37,6 +37,8 @@ export function loadProgress(totalWords: number): UserProgress {
       if (!parsed.retentionSettings) {
         parsed.retentionSettings = { ...defaultRetentionSettings };
       }
+      // 词库更新时同步最新总词数
+      parsed.totalWords = totalWords;
       return parsed;
     }
   } catch (error) {

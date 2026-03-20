@@ -9,7 +9,7 @@ import { loadProgress, generateTestData } from './utils/storage';
 import './index.css';
 
 // 设置为 true 生成测试数据，测试完成后改回 false
-const GENERATE_TEST_DATA = true;
+const GENERATE_TEST_DATA = false;
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');

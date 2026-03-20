@@ -1,5 +1,34 @@
 import type { UserProgress, Page } from '../types';
 
+// 计算连续学习天数
+function calculateStreak(history: { date: string; newLearned: number; reviewed: number }[]): number {
+  if (history.length === 0) return 0;
+  
+  const today = new Date().toISOString().split('T')[0];
+  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
+  
+  let streak = 0;
+  let checkDate = new Date();
+  
+  // 如果今天没学习，从昨天开始算
+  const todayEntry = sorted.find(h => h.date === today);
+  if (!todayEntry || (todayEntry.newLearned === 0 && todayEntry.reviewed === 0)) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+  
+  for (const entry of sorted) {
+    const dateStr = checkDate.toISOString().split('T')[0];
+    if (entry.date === dateStr && (entry.newLearned > 0 || entry.reviewed > 0)) {
+      streak++;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else if (entry.date < dateStr) {
+      break;
+    }
+  }
+  
+  return streak;
+}
+
 interface HomeProps {
   progress: UserProgress;
   onNavigate: (page: Page) => void;
@@ -16,6 +45,29 @@ export function Home({ progress, onNavigate }: HomeProps) {
   const today = new Date().toISOString().split('T')[0];
   const todayStats = progress.studyHistory.find(h => h.date === today);
   const todayLearned = todayStats?.newLearned || 0;
+
+  // 获取最近7天学习记录
+  const getLast7Days = () => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayStats = progress.studyHistory.find(h => h.date === dateStr);
+      days.push({
+        date: dateStr,
+        dayName: ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
+        learned: dayStats?.newLearned || 0,
+        reviewed: dayStats?.reviewed || 0,
+        isToday: i === 0
+      });
+    }
+    return days;
+  };
+
+  const last7Days = getLast7Days();
+  const totalLearned7Days = last7Days.reduce((sum, d) => sum + d.learned, 0);
+  const streak = calculateStreak(progress.studyHistory);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -105,6 +157,53 @@ export function Home({ progress, onNavigate }: HomeProps) {
           )}
         </div>
 
+        {/* 每日学习记录 */}
+        <div className="bg-white rounded-2xl shadow-md p-6 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-800">近7天学习</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">连续</span>
+              <span className="text-xl font-bold text-teal-500">{streak}</span>
+              <span className="text-sm text-gray-500">天</span>
+            </div>
+          </div>
+          
+          {/* 7天打卡网格 */}
+          <div className="flex justify-between mb-4">
+            {last7Days.map((day, index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div 
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
+                    day.learned > 0 || day.reviewed > 0
+                      ? 'bg-teal-400 text-white shadow-md'
+                      : day.isToday
+                      ? 'bg-teal-100 text-teal-600 border-2 border-teal-400'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {day.learned > 0 ? day.learned : day.dayName}
+                </div>
+                <span className={`text-xs mt-1 ${day.isToday ? 'text-teal-600 font-bold' : 'text-gray-400'}`}>
+                  {day.isToday ? '今天' : day.dayName}
+                </span>
+              </div>
+            ))}
+          </div>
+          
+          {/* 本周统计 */}
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-teal-500">{totalLearned7Days}</div>
+              <div className="text-xs text-gray-500">本周新学</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-rose-400">
+                {last7Days.reduce((sum, d) => sum + d.reviewed, 0)}
+              </div>
+              <div className="text-xs text-gray-500">本周复习</div>
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
