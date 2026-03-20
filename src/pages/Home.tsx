@@ -48,7 +48,7 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
   const todayStats = progress.studyHistory.find(h => h.date === today);
   const todayLearned = todayStats?.newLearned || 0;
 
-  // 获取最近7天学习记录
+  // 获取最近7天学习记录（展示用）
   const getLast7Days = () => {
     const days = [];
     for (let i = 6; i >= 0; i--) {
@@ -67,8 +67,29 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
     return days;
   };
 
+  // 获取最近100天统计
+  const get100DaysStats = () => {
+    const now = new Date();
+    let totalLearned = 0;
+    let totalReviewed = 0;
+    let activeDays = 0;
+    for (let i = 0; i < 100; i++) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      const entry = progress.studyHistory.find(h => h.date === dateStr);
+      if (entry) {
+        totalLearned += entry.newLearned;
+        totalReviewed += entry.reviewed;
+        if (entry.newLearned > 0 || entry.reviewed > 0) activeDays++;
+      }
+    }
+    return { totalLearned, totalReviewed, activeDays };
+  };
+
   const last7Days = getLast7Days();
   const totalLearned7Days = last7Days.reduce((sum, d) => sum + d.learned, 0);
+  const stats100 = get100DaysStats();
   const streak = calculateStreak(progress.studyHistory);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -228,17 +249,19 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
             ))}
           </div>
           
-          {/* 本周统计 */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+          {/* 本周 & 百天统计 */}
+          <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
             <div className="text-center">
-              <div className="text-2xl font-bold text-teal-500">{totalLearned7Days}</div>
-              <div className="text-xs text-gray-500">本周新学</div>
+              <div className="text-xl font-bold text-teal-500">{totalLearned7Days}</div>
+              <div className="text-xs text-gray-400">近7天新学</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-rose-400">
-                {last7Days.reduce((sum, d) => sum + d.reviewed, 0)}
-              </div>
-              <div className="text-xs text-gray-500">本周复习</div>
+              <div className="text-xl font-bold text-purple-400">{stats100.activeDays}</div>
+              <div className="text-xs text-gray-400">百天打卡</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-rose-400">{stats100.totalLearned}</div>
+              <div className="text-xs text-gray-400">百天总学</div>
             </div>
           </div>
         </div>
