@@ -49,20 +49,28 @@ export function Home({ progress, onNavigate, onImportProgress, onClearWrongWords
   const todayStats = progress.studyHistory.find(h => h.date === today);
   const todayLearned = todayStats?.newLearned || 0;
 
-  // 获取最近50天学习记录（展示用）
+  // 获取最近50天学习记录（展示用）- 显示学习第几天，从左到右第1天到第50天
   const getLast50Days = () => {
+    // 找到最早的学习记录作为第1天
+    const sortedHistory = [...progress.studyHistory].sort((a, b) => a.date.localeCompare(b.date));
+    const firstLearnDate = sortedHistory.length > 0 ? sortedHistory[0].date : today;
+    const firstDate = new Date(firstLearnDate);
+    
     const days = [];
-    for (let i = 49; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
+    for (let i = 0; i < 50; i++) {
+      // 第1天、第2天...第50天
+      const dayNumber = i + 1;
+      const date = new Date(firstDate);
+      date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       const dayStats = progress.studyHistory.find(h => h.date === dateStr);
+      
       days.push({
         date: dateStr,
-        dayIndex: 50 - i, // 1-50的序号
+        dayIndex: dayNumber, // 第几天
         learned: dayStats?.newLearned || 0,
         reviewed: dayStats?.reviewed || 0,
-        isToday: i === 0
+        isToday: dateStr === today
       });
     }
     return days;
