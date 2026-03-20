@@ -44,13 +44,11 @@ export function WrongBook({ progress, onUpdateProgress, onNavigate, onStartRevie
     return getWordById(wordId);
   };
 
-  // 移除错题
+  // 从错题本删除（彻底移除）
   const handleRemove = (wordId: string) => {
     const newProgress = { 
       ...progress,
-      wrongWords: progress.wrongWords.map(w => 
-        w.wordId === wordId ? { ...w, mastered: true } : w
-      )
+      wrongWords: progress.wrongWords.filter(w => w.wordId !== wordId)
     };
     onUpdateProgress(newProgress);
     saveProgress(newProgress);
@@ -145,6 +143,7 @@ export function WrongBook({ progress, onUpdateProgress, onNavigate, onStartRevie
             </div>
             <p className="text-sm text-gray-500 mb-4">调整各时间段错题的复习概率</p>
             
+            {renderSettingSlider('0', '今天加入')}
             {renderSettingSlider('1', '1天前')}
             {renderSettingSlider('2', '2天前')}
             {renderSettingSlider('3', '3天前')}

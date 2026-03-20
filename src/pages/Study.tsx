@@ -1,7 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Word, UserProgress, Page, WrongWordItem } from '../types';
 import { speakWord } from '../utils/review';
 import { saveProgress } from '../utils/storage';
+
+// Fisher-Yates 洗牌算法
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 
 interface StudyProps {
   words: Word[];
@@ -11,13 +21,16 @@ interface StudyProps {
 }
 
 export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyProps) {
-  const [currentIndex, setCurrentIndex] = useState(progress.currentIndex);
+  // 打乱单词顺序（每次进入学习页面重新打乱）
+  const shuffledWords = useMemo(() => shuffleArray(words), [words]);
+  
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [showMeaning, setShowMeaning] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [justAddedWrong, setJustAddedWrong] = useState(false);
 
   // 获取当前单词
-  const currentWord = words[currentIndex];
+  const currentWord = shuffledWords[currentIndex];
   const totalWords = words.length;
   const isLastWord = currentIndex >= totalWords - 1;
 
@@ -80,13 +93,24 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
     }, 200);
   };
 
-  // 添加到错题本
-  const handleAddToWrong = () => {
+  // 检查当前单词是否已在错题本
+  const isAlreadyInWrongBook = progress.wrongWords.some(w => w.wordId === currentWord.id && !w.mastered);
+
+  // 添加到错题本或从错题本移除
+  const handleToggleWrong = () => {
     if (!currentWord) return;
     
-    const existingIndex = progress.wrongWords.findIndex(w => w.wordId === currentWord.id && !w.mastered);
-    
-    if (existingIndex === -1) {
+    if (isAlreadyInWrongBook) {
+      // 从错题本移除
+      const newProgress = {
+        ...progress,
+        wrongWords: progress.wrongWords.filter(w => w.wordId !== currentWord.id)
+      };
+      onUpdateProgress(newProgress);
+      saveProgress(newProgress);
+      setJustAddedWrong(false);
+    } else {
+      // 添加到错题本
       const wrongItem: WrongWordItem = {
         wordId: currentWord.id,
         addedAt: Date.now(),
@@ -103,9 +127,6 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
       setJustAddedWrong(true);
     }
   };
-
-  // 检查当前单词是否已在错题本
-  const isAlreadyInWrongBook = progress.wrongWords.some(w => w.wordId === currentWord.id && !w.mastered);
 
   // 处理发音
   const handleSpeak = (e: React.MouseEvent) => {
@@ -217,17 +238,16 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
             ← 返回
           </button>
 
-          {/* 加入错题本 */}
+          {/* 加入/移除错题本 */}
           <button
-            onClick={handleAddToWrong}
-            disabled={isAlreadyInWrongBook}
+            onClick={handleToggleWrong}
             className={`px-6 py-4 rounded-2xl font-medium transition-all min-w-[80px] ${
-              justAddedWrong || isAlreadyInWrongBook
-                ? 'bg-green-500 text-white scale-110 cursor-not-allowed'
+              isAlreadyInWrongBook
+                ? 'bg-green-500 text-white hover:bg-green-600'
                 : 'bg-rose-400 text-white hover:bg-rose-500 hover:scale-105'
             }`}
           >
-            {justAddedWrong || isAlreadyInWrongBook ? '已加入' : '错题'}
+            {isAlreadyInWrongBook ? '已加入' : '错题'}
           </button>
 
           {/* 继续按钮 */}

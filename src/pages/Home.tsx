@@ -33,10 +33,11 @@ function calculateStreak(history: { date: string; newLearned: number; reviewed: 
 interface HomeProps {
   progress: UserProgress;
   onNavigate: (page: Page) => void;
-  onImportProgress: (progress: UserProgress) => void;
+  onImportProgress?: (progress: UserProgress) => void;
+  onClearWrongWords?: () => void;
 }
 
-export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
+export function Home({ progress, onNavigate, onImportProgress, onClearWrongWords }: HomeProps) {
   const { totalWords, learnedWords, wrongWords } = progress;
   const learnedCount = learnedWords.length;
   const wrongCount = wrongWords.filter(w => !w.mastered).length;
@@ -48,17 +49,17 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
   const todayStats = progress.studyHistory.find(h => h.date === today);
   const todayLearned = todayStats?.newLearned || 0;
 
-  // 获取最近7天学习记录（展示用）
-  const getLast7Days = () => {
+  // 获取最近50天学习记录（展示用）
+  const getLast50Days = () => {
     const days = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 49; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       const dayStats = progress.studyHistory.find(h => h.date === dateStr);
       days.push({
         date: dateStr,
-        dayName: ['日', '一', '二', '三', '四', '五', '六'][date.getDay()],
+        dayIndex: 50 - i, // 1-50的序号
         learned: dayStats?.newLearned || 0,
         reviewed: dayStats?.reviewed || 0,
         isToday: i === 0
@@ -67,13 +68,13 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
     return days;
   };
 
-  // 获取最近100天统计
-  const get100DaysStats = () => {
+  // 获取最近50天统计
+  const get50DaysStats = () => {
     const now = new Date();
     let totalLearned = 0;
     let totalReviewed = 0;
     let activeDays = 0;
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 50; i++) {
       const date = new Date(now);
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
@@ -87,9 +88,9 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
     return { totalLearned, totalReviewed, activeDays };
   };
 
-  const last7Days = getLast7Days();
-  const totalLearned7Days = last7Days.reduce((sum, d) => sum + d.learned, 0);
-  const stats100 = get100DaysStats();
+  const last50Days = getLast50Days();
+  const totalLearned50Days = last50Days.reduce((sum: number, d: {learned: number}) => sum + d.learned, 0);
+  const stats50 = get50DaysStats();
   const streak = calculateStreak(progress.studyHistory);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -115,7 +116,7 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
       try {
         const data = JSON.parse(ev.target?.result as string) as UserProgress;
         if (data.learnedWords && data.wrongWords) {
-          onImportProgress(data);
+          onImportProgress?.(data);
           alert('进度导入成功！');
         } else {
           alert('文件格式不正确');
@@ -210,16 +211,30 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
             <div className="mt-4 pt-4 border-t border-gray-100">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">错题本</span>
-                <span className="text-orange-600 font-bold">{wrongCount} 个待复习</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-orange-600 font-bold">{wrongCount} 个待复习</span>
+                  {onClearWrongWords && (
+                    <button
+                      onClick={() => {
+                        if (confirm('确定清空所有错题吗？')) {
+                          onClearWrongWords();
+                        }
+                      }}
+                      className="text-xs text-gray-400 hover:text-rose-500 transition-colors"
+                    >
+                      清空
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* 每日学习记录 */}
+        {/* 每日学习记录 - 50天 */}
         <div className="bg-white rounded-2xl shadow-md p-6 mt-4">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">近7天学习</h2>
+            <h2 className="text-lg font-bold text-gray-800">近50天学习</h2>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">连续</span>
               <span className="text-xl font-bold text-teal-500">{streak}</span>
@@ -227,71 +242,71 @@ export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
             </div>
           </div>
           
-          {/* 7天打卡网格 */}
-          <div className="flex justify-between mb-4">
-            {last7Days.map((day, index) => (
+          {/* 50天打卡网格 - 5行10列，显示每天学习数量 */}
+          <div className="grid grid-cols-10 gap-1 mb-4">
+            {last50Days.map((day: {dayIndex: number, learned: number, reviewed: number, isToday: boolean}, index: number) => (
               <div key={index} className="flex flex-col items-center">
                 <div 
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold transition-all ${
-                    day.learned > 0 || day.reviewed > 0
-                      ? 'bg-teal-400 text-white shadow-md'
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${
+                    day.learned > 0
+                      ? 'bg-teal-400 text-white'
                       : day.isToday
                       ? 'bg-teal-100 text-teal-600 border-2 border-teal-400'
                       : 'bg-gray-100 text-gray-400'
                   }`}
+                  title={`第${day.dayIndex}天: 新学${day.learned}个`}
                 >
-                  {day.learned > 0 ? day.learned : day.dayName}
+                  {day.learned > 0 ? day.learned : '-'}
                 </div>
-                <span className={`text-xs mt-1 ${day.isToday ? 'text-teal-600 font-bold' : 'text-gray-400'}`}>
-                  {day.isToday ? '今天' : day.dayName}
-                </span>
               </div>
             ))}
           </div>
           
-          {/* 本周 & 百天统计 */}
+          {/* 50天统计 */}
           <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100">
             <div className="text-center">
-              <div className="text-xl font-bold text-teal-500">{totalLearned7Days}</div>
-              <div className="text-xs text-gray-400">近7天新学</div>
+              <div className="text-xl font-bold text-teal-500">{totalLearned50Days}</div>
+              <div className="text-xs text-gray-400">近50天新学</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-purple-400">{stats100.activeDays}</div>
-              <div className="text-xs text-gray-400">百天打卡</div>
+              <div className="text-xl font-bold text-purple-400">{stats50.activeDays}</div>
+              <div className="text-xs text-gray-400">50天打卡</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-bold text-rose-400">{stats100.totalLearned}</div>
-              <div className="text-xs text-gray-400">百天总学</div>
+              <div className="text-xl font-bold text-rose-400">{stats50.totalLearned}</div>
+              <div className="text-xs text-gray-400">50天总学</div>
             </div>
           </div>
         </div>
 
         {/* 导出/导入进度 */}
-        <div className="bg-white rounded-2xl shadow-md p-5 mt-4">
-          <h2 className="text-sm font-bold text-gray-500 mb-3">进度备份</h2>
-          <div className="flex gap-3">
-            <button
-              onClick={handleExport}
-              className="flex-1 py-3 bg-teal-50 text-teal-600 font-bold rounded-xl text-sm active:scale-95 transition-all"
-            >
-              导出进度
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex-1 py-3 bg-rose-50 text-rose-500 font-bold rounded-xl text-sm active:scale-95 transition-all"
-            >
-              导入进度
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImport}
-            />
+        {onImportProgress && (
+          <div className="bg-white rounded-2xl shadow-md p-5 mt-4">
+            <h2 className="text-sm font-bold text-gray-500 mb-3">进度备份</h2>
+            <div className="flex gap-3">
+              <button
+                onClick={handleExport}
+                className="flex-1 py-3 bg-teal-50 text-teal-600 font-bold rounded-xl text-sm active:scale-95 transition-all"
+              >
+                导出进度
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex-1 py-3 bg-rose-50 text-rose-500 font-bold rounded-xl text-sm active:scale-95 transition-all"
+              >
+                导入进度
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">换设备时先导出，再在新设备上导入</p>
           </div>
-          <p className="text-xs text-gray-400 mt-2 text-center">换设备时先导出，再在新设备上导入</p>
-        </div>
+        )}
 
       </div>
     </div>

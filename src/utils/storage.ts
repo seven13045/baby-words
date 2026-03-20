@@ -4,6 +4,7 @@ const STORAGE_KEY = 'cet6-vocabulary-progress';
 
 // 默认复习强度设置
 export const defaultRetentionSettings: RetentionSettings = {
+  '0': 1.00,    // 今天加入: 100%
   '1': 1.00,    // 1天前: 100%
   '2': 0.80,    // 2天前: 80%
   '3': 0.70,    // 3天前: 70%

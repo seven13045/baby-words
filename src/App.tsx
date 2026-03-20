@@ -49,6 +49,13 @@ function App() {
     setProgress(imported);
   };
 
+  // 清空错题本
+  const handleClearWrongWords = () => {
+    const newProgress = { ...progress, wrongWords: [] };
+    saveProgress(newProgress);
+    setProgress(newProgress);
+  };
+
   // 页面内容渲染
   const renderPage = () => {
     switch (currentPage) {
@@ -58,6 +65,7 @@ function App() {
             progress={progress}
             onNavigate={handleNavigate}
             onImportProgress={handleImportProgress}
+            onClearWrongWords={handleClearWrongWords}
           />
         );
       
@@ -92,7 +100,7 @@ function App() {
         );
       
       default:
-        return <Home progress={progress} onNavigate={handleNavigate} onImportProgress={handleImportProgress} />;
+        return <Home progress={progress} onNavigate={handleNavigate} onImportProgress={handleImportProgress} onClearWrongWords={handleClearWrongWords} />;
     }
   };
 

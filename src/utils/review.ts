@@ -73,7 +73,7 @@ export function calculateTodayReview(
       (today.getTime() - item.addedAt) / (1000 * 60 * 60 * 24)
     );
     
-    if (daysDiff === 0) continue; // 今天加入的不复习
+    // 0天（今天加入）的也参与复习，可以在设置中调整比例
     
     const rateKey = getRateKey(daysDiff);
     if (!groupedByDay[rateKey]) {
