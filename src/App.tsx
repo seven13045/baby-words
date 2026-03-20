@@ -5,7 +5,7 @@ import { Study } from './pages/Study';
 import { WrongBook } from './pages/WrongBook';
 import { Review } from './pages/Review';
 import { cet6Words } from './data/words';
-import { loadProgress, generateTestData } from './utils/storage';
+import { loadProgress, generateTestData, saveProgress } from './utils/storage';
 import './index.css';
 
 // 设置为 true 生成测试数据，测试完成后改回 false
@@ -41,6 +41,14 @@ function App() {
     setReviewWords(words);
   };
 
+  // 导入进度
+  const handleImportProgress = (imported: UserProgress) => {
+    // 同步最新词库总数
+    imported.totalWords = cet6Words.length;
+    saveProgress(imported);
+    setProgress(imported);
+  };
+
   // 页面内容渲染
   const renderPage = () => {
     switch (currentPage) {
@@ -49,6 +57,7 @@ function App() {
           <Home
             progress={progress}
             onNavigate={handleNavigate}
+            onImportProgress={handleImportProgress}
           />
         );
       
@@ -83,7 +92,7 @@ function App() {
         );
       
       default:
-        return <Home progress={progress} onNavigate={handleNavigate} />;
+        return <Home progress={progress} onNavigate={handleNavigate} onImportProgress={handleImportProgress} />;
     }
   };
 

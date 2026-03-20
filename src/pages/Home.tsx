@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { UserProgress, Page } from '../types';
 
 // 计算连续学习天数
@@ -32,9 +33,10 @@ function calculateStreak(history: { date: string; newLearned: number; reviewed: 
 interface HomeProps {
   progress: UserProgress;
   onNavigate: (page: Page) => void;
+  onImportProgress: (progress: UserProgress) => void;
 }
 
-export function Home({ progress, onNavigate }: HomeProps) {
+export function Home({ progress, onNavigate, onImportProgress }: HomeProps) {
   const { totalWords, learnedWords, wrongWords } = progress;
   const learnedCount = learnedWords.length;
   const wrongCount = wrongWords.filter(w => !w.mastered).length;
@@ -68,6 +70,42 @@ export function Home({ progress, onNavigate }: HomeProps) {
   const last7Days = getLast7Days();
   const totalLearned7Days = last7Days.reduce((sum, d) => sum + d.learned, 0);
   const streak = calculateStreak(progress.studyHistory);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 导出进度
+  const handleExport = () => {
+    const json = JSON.stringify(progress, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `宝宝单词进度_${today}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // 导入进度
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as UserProgress;
+        if (data.learnedWords && data.wrongWords) {
+          onImportProgress(data);
+          alert('进度导入成功！');
+        } else {
+          alert('文件格式不正确');
+        }
+      } catch {
+        alert('导入失败，请检查文件');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -203,6 +241,33 @@ export function Home({ progress, onNavigate }: HomeProps) {
               <div className="text-xs text-gray-500">本周复习</div>
             </div>
           </div>
+        </div>
+
+        {/* 导出/导入进度 */}
+        <div className="bg-white rounded-2xl shadow-md p-5 mt-4">
+          <h2 className="text-sm font-bold text-gray-500 mb-3">进度备份</h2>
+          <div className="flex gap-3">
+            <button
+              onClick={handleExport}
+              className="flex-1 py-3 bg-teal-50 text-teal-600 font-bold rounded-xl text-sm active:scale-95 transition-all"
+            >
+              导出进度
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex-1 py-3 bg-rose-50 text-rose-500 font-bold rounded-xl text-sm active:scale-95 transition-all"
+            >
+              导入进度
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={handleImport}
+            />
+          </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">换设备时先导出，再在新设备上导入</p>
         </div>
 
       </div>
