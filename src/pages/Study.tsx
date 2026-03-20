@@ -27,7 +27,6 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMeaning, setShowMeaning] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [justAddedWrong, setJustAddedWrong] = useState(false);
 
   // 获取当前单词
   const currentWord = shuffledWords[currentIndex];
@@ -55,7 +54,7 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
       setTimeout(() => {
         setCurrentIndex(prev => prev - 1);
         setShowMeaning(false);
-        setJustAddedWrong(false);
+
         setIsAnimating(false);
       }, 200);
     }
@@ -87,7 +86,7 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
       if (!isLastWord) {
         setCurrentIndex(prev => prev + 1);
         setShowMeaning(false);
-        setJustAddedWrong(false);
+
       }
       setIsAnimating(false);
     }, 200);
@@ -108,7 +107,6 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
       };
       onUpdateProgress(newProgress);
       saveProgress(newProgress);
-      setJustAddedWrong(false);
     } else {
       // 添加到错题本
       const wrongItem: WrongWordItem = {
@@ -124,7 +122,6 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
       };
       onUpdateProgress(newProgress);
       saveProgress(newProgress);
-      setJustAddedWrong(true);
     }
   };
 
