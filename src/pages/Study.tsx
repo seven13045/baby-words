@@ -1,21 +1,7 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Word, UserProgress, Page, WrongWordItem } from '../types';
 import { speakWord } from '../utils/review';
 import { saveProgress } from '../utils/storage';
-
-// 固定种子打乱算法 - 每次顺序相同
-function shuffleWithFixedSeed<T>(array: T[]): T[] {
-  const arr = [...array];
-  // 使用固定种子 "cet6-fixed-seed" 的简化哈希
-  let seed = 12345;
-  for (let i = arr.length - 1; i > 0; i--) {
-    // 线性同余生成器
-    seed = (seed * 1103515245 + 12345) % 2147483647;
-    const j = seed % (i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
 
 interface StudyProps {
   words: Word[];
