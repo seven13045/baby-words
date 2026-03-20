@@ -3,11 +3,15 @@ import type { Word, UserProgress, Page, WrongWordItem } from '../types';
 import { speakWord } from '../utils/review';
 import { saveProgress } from '../utils/storage';
 
-// Fisher-Yates 洗牌算法
-function shuffleArray<T>(array: T[]): T[] {
+// 固定种子打乱算法 - 每次顺序相同
+function shuffleWithFixedSeed<T>(array: T[]): T[] {
   const arr = [...array];
+  // 使用固定种子 "cet6-fixed-seed" 的简化哈希
+  let seed = 12345;
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    // 线性同余生成器
+    seed = (seed * 1103515245 + 12345) % 2147483647;
+    const j = seed % (i + 1);
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -21,15 +25,13 @@ interface StudyProps {
 }
 
 export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyProps) {
-  // 打乱单词顺序（每次进入学习页面重新打乱）
-  const shuffledWords = useMemo(() => shuffleArray(words), [words]);
-  
+  // words 已经是 App.tsx 中固定打乱并过滤后的
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMeaning, setShowMeaning] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   // 获取当前单词
-  const currentWord = shuffledWords[currentIndex];
+  const currentWord = words[currentIndex];
   const totalWords = words.length;
   const isLastWord = currentIndex >= totalWords - 1;
 

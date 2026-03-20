@@ -21,9 +21,18 @@ function App() {
   });
   const [reviewWords, setReviewWords] = useState<WrongWordItem[]>([]);
 
-  // 获取未学习的单词
-  const unlearnedWords = useMemo(() => {
-    return cet6Words.filter(w => !progress.learnedWords.includes(w.id));
+  // 固定种子打乱全部单词，然后过滤已学的
+  const studyWords = useMemo(() => {
+    // 先固定打乱全部单词
+    const shuffled = [...cet6Words];
+    let seed = 12345;
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      seed = (seed * 1103515245 + 12345) % 2147483647;
+      const j = seed % (i + 1);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    // 再过滤已学的，保持打乱顺序
+    return shuffled.filter(w => !progress.learnedWords.includes(w.id));
   }, [progress.learnedWords]);
 
   // 更新进度
@@ -79,10 +88,10 @@ function App() {
       
       case 'study':
         // 调试：确认未学单词数量
-        console.log('未学单词数:', unlearnedWords.length, '已学:', progress.learnedWords.length);
+        console.log('未学单词数:', studyWords.length, '已学:', progress.learnedWords.length);
         return (
           <Study
-            words={unlearnedWords.length > 0 ? unlearnedWords : cet6Words}
+            words={studyWords.length > 0 ? studyWords : cet6Words}
             progress={progress}
             onUpdateProgress={handleUpdateProgress}
             onNavigate={handleNavigate}
