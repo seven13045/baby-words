@@ -66,18 +66,18 @@ export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyPr
     setTimeout(() => {
       // 标记为已学习
       if (!progress.learnedWords.includes(currentWord.id)) {
-        const newProgress = { ...progress };
-        newProgress.learnedWords.push(currentWord.id);
-        newProgress.currentIndex = Math.min(currentIndex + 1, totalWords - 1);
-        
-        // 更新今日学习统计
         const today = new Date().toISOString().split('T')[0];
-        const existingEntry = newProgress.studyHistory.find(h => h.date === today);
-        if (existingEntry) {
-          existingEntry.newLearned += 1;
-        } else {
-          newProgress.studyHistory.push({ date: today, newLearned: 1, reviewed: 0 });
-        }
+        const existingEntry = progress.studyHistory.find(h => h.date === today);
+        const newStudyHistory = existingEntry 
+          ? progress.studyHistory.map(h => h.date === today ? { ...h, newLearned: h.newLearned + 1 } : h)
+          : [...progress.studyHistory, { date: today, newLearned: 1, reviewed: 0 }];
+        
+        const newProgress = { 
+          ...progress,
+          learnedWords: [...progress.learnedWords, currentWord.id],
+          currentIndex: Math.min(currentIndex + 1, totalWords - 1),
+          studyHistory: newStudyHistory
+        };
         
         onUpdateProgress(newProgress);
         saveProgress(newProgress);

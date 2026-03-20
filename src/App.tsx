@@ -78,6 +78,8 @@ function App() {
         );
       
       case 'study':
+        // 调试：确认未学单词数量
+        console.log('未学单词数:', unlearnedWords.length, '已学:', progress.learnedWords.length);
         return (
           <Study
             words={unlearnedWords.length > 0 ? unlearnedWords : cet6Words}
