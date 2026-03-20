@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Word, UserProgress, Page, WrongWordItem } from '../types';
 import { speakWord } from '../utils/review';
 import { saveProgress } from '../utils/storage';
@@ -11,14 +11,17 @@ interface StudyProps {
 }
 
 export function Study({ words, progress, onUpdateProgress, onNavigate }: StudyProps) {
-  // words 已经是 App.tsx 中固定打乱并过滤后的
+  // 缓存当前 session 的单词列表，不随外部过滤变化
+  const wordsRef = useRef<Word[]>(words);
+  const sessionWords = wordsRef.current;
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showMeaning, setShowMeaning] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   // 获取当前单词
-  const currentWord = words[currentIndex];
-  const totalWords = words.length;
+  const currentWord = sessionWords[currentIndex];
+  const totalWords = sessionWords.length;
   const isLastWord = currentIndex >= totalWords - 1;
 
   // 自动发音
