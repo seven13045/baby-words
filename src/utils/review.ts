@@ -82,13 +82,11 @@ export function calculateTodayReview(
     groupedByDay[rateKey].push(item);
   }
   
-  // 每天按固定数量选取（假设每天4个新错题）
-  const dailyNewWords = 4;
-  
+  // 按每天的实际错题数量计算复习数量
   for (const [rateKey, items] of Object.entries(groupedByDay)) {
     const rate = retentionSettings[rateKey as keyof RetentionSettings] || 0.3;
-    // 计算该天数应复习的数量
-    const targetCount = Math.round(dailyNewWords * rate);
+    // 计算该天数应复习的数量 = 实际错题数 × 比例
+    const targetCount = Math.round(items.length * rate);
     
     // 随机打乱该组的单词
     const shuffled = [...items].sort(() => Math.random() - 0.5);

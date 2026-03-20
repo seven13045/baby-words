@@ -5,7 +5,7 @@ import { Study } from './pages/Study';
 import { WrongBook } from './pages/WrongBook';
 import { Review } from './pages/Review';
 import { cet6Words } from './data/words';
-import { loadProgress, generateTestData, saveProgress } from './utils/storage';
+import { loadProgress, generateTestData, saveProgress, getInitialProgress } from './utils/storage';
 import './index.css';
 
 // 设置为 true 生成测试数据，测试完成后改回 false
@@ -56,6 +56,13 @@ function App() {
     setProgress(newProgress);
   };
 
+  // 重头开始 - 清空所有进度
+  const handleResetProgress = () => {
+    const initialProgress = getInitialProgress(cet6Words.length);
+    saveProgress(initialProgress);
+    setProgress(initialProgress);
+  };
+
   // 页面内容渲染
   const renderPage = () => {
     switch (currentPage) {
@@ -66,6 +73,7 @@ function App() {
             onNavigate={handleNavigate}
             onImportProgress={handleImportProgress}
             onClearWrongWords={handleClearWrongWords}
+            onResetProgress={handleResetProgress}
           />
         );
       
@@ -100,7 +108,7 @@ function App() {
         );
       
       default:
-        return <Home progress={progress} onNavigate={handleNavigate} onImportProgress={handleImportProgress} onClearWrongWords={handleClearWrongWords} />;
+        return <Home progress={progress} onNavigate={handleNavigate} onImportProgress={handleImportProgress} onClearWrongWords={handleClearWrongWords} onResetProgress={handleResetProgress} />;
     }
   };
 

@@ -35,9 +35,10 @@ interface HomeProps {
   onNavigate: (page: Page) => void;
   onImportProgress?: (progress: UserProgress) => void;
   onClearWrongWords?: () => void;
+  onResetProgress?: () => void;
 }
 
-export function Home({ progress, onNavigate, onImportProgress, onClearWrongWords }: HomeProps) {
+export function Home({ progress, onNavigate, onImportProgress, onClearWrongWords, onResetProgress }: HomeProps) {
   const { totalWords, learnedWords, wrongWords } = progress;
   const learnedCount = learnedWords.length;
   const wrongCount = wrongWords.filter(w => !w.mastered).length;
@@ -313,6 +314,19 @@ export function Home({ progress, onNavigate, onImportProgress, onClearWrongWords
               />
             </div>
             <p className="text-xs text-gray-400 mt-2 text-center">换设备时先导出，再在新设备上导入</p>
+            
+            {onResetProgress && (
+              <button
+                onClick={() => {
+                  if (confirm('确定要重头开始吗？所有学习记录、错题本、打卡数据都会被清空！')) {
+                    onResetProgress();
+                  }
+                }}
+                className="w-full mt-4 py-3 bg-gray-100 text-gray-500 font-bold rounded-xl text-sm hover:bg-gray-200 active:scale-95 transition-all"
+              >
+                重头开始
+              </button>
+            )}
           </div>
         )}
 
